@@ -1,29 +1,50 @@
+using System.Reflection;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using LibrarySystem.Data;
+using LibrarySystem.Service;
+using Mapster;
+using MapsterMapper;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-// Add services to the container.
-
 builder.Services.AddControllers();
+
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var connectionstring = builder.Configuration.GetConnectionString("DefaultConnection") ??
            throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 builder.Services.AddDbContext<ApplicationDbContext>(Options => Options.UseSqlServer(connectionstring));
 
 
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddScoped<IBookService, BookService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+
+builder.Services.AddFluentValidationAutoValidation()
+      .AddValidatorsFromAssembly(Assembly.GetExecutingAssembly());
+
+var mappingconfig = TypeAdapterConfig.GlobalSettings;
+mappingconfig.Scan(Assembly.GetExecutingAssembly());
+builder.Services.AddSingleton<IMapper>(new Mapper(mappingconfig));
+
+
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
+app.MapGet("/", context =>
+{
+    context.Response.Redirect("/swagger");
+    return Task.CompletedTask;
+});
 
 app.UseHttpsRedirection();
 

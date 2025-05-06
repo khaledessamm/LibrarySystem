@@ -24,6 +24,7 @@ public class ApplicationDbContext : DbContext
 
         foreach (var fk in cascadefks)
             fk.DeleteBehavior = DeleteBehavior.SetNull; //setnull here to prevent deleting the books  while  deleting the category
+                                                        //since using setnull we have to remove categoryid from book table first
 
         base.OnModelCreating(modelBuilder);
 
